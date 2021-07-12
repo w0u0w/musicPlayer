@@ -2,6 +2,8 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+// ignore: import_of_legacy_library_into_null_safe
+import 'package:toast/toast.dart';
 
 void main() {
   runApp(MyApp());
@@ -13,6 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Music player',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -29,8 +32,10 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   AudioPlayer _audioPlayer = AudioPlayer();
   bool isPlaying = false;
-  String crtTime = "00:00";
-  String cptTime = "00:00";
+  bool filePathExists = false;
+
+  String crtTime = "0:00:00";
+  String cptTime = "0:00:00";
 
   @override
   void initState() {
@@ -73,18 +78,26 @@ class _HomePageState extends State<HomePage> {
               children: [
                 IconButton(
                   onPressed: () {
+
                     if (isPlaying) {
                       _audioPlayer.pause();
 
                       setState(() {
                         isPlaying = false;
                       });
-                    } else {
+                    } else if(filePathExists && !isPlaying){
                       _audioPlayer.resume();
 
                       setState(() {
                         isPlaying = true;
                       });
+                    } else if(!filePathExists && !isPlaying){
+                      Toast.show(
+                        "Choose audio file",
+                        context,
+                        duration: Toast.LENGTH_LONG,
+                          gravity:  Toast.BOTTOM
+                      );
                     }
                   },
                   icon: Icon(isPlaying
@@ -96,6 +109,7 @@ class _HomePageState extends State<HomePage> {
                 IconButton(
                   onPressed: () {
                     _audioPlayer.stop();
+                    crtTime = "0:00:00";
                     setState(() {
                       isPlaying = false;
                     });
@@ -104,7 +118,7 @@ class _HomePageState extends State<HomePage> {
                   iconSize: 32.0,
                 ),
 
-                SizedBox(width: 25),
+                SizedBox(width: 20),
 
                 Text(crtTime, style: TextStyle(fontWeight: FontWeight.w700),),
 
@@ -128,6 +142,13 @@ class _HomePageState extends State<HomePage> {
             if (status == 1) {
               setState(() {
                 isPlaying = true;
+                filePathExists = true;
+              });
+            }
+            else {
+              setState(() {
+                isPlaying = false;
+                filePathExists = false;
               });
             }
           }
