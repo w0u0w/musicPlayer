@@ -1,5 +1,7 @@
+import 'package:audioplayers/audioplayers.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:music_player/audioplayer_with_local_assets.dart';
 
 void main() {
   runApp(MyApp());
@@ -10,21 +12,127 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Music player',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: AudioPlayerWithLocalAssets(),
+      home: HomePage(),
     );
   }
 }
 
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  AudioPlayer _audioPlayer = AudioPlayer();
+  bool isPlaying = false;
+  String crtTime = "00:00";
+  String cptTime = "00:00";
+
+  @override
+  void initState() {
+    super.initState();
+    
+    _audioPlayer.onAudioPositionChanged.listen((Duration duration) {
+      setState(() {
+        crtTime = duration.toString().split(".")[0];
+      });
+    });
+
+    _audioPlayer.onDurationChanged.listen((Duration duration) {
+      setState(() {
+        cptTime  = duration.toString().split(".")[0];
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.indigo,
+      body: Stack(
+        children: [
+          Image.asset(
+            "assets/bg1.gif",
+            fit: BoxFit.contain,
+          ),
+          Container(
+            width: MediaQuery.of(context).size.width * 0.8,
+            height: 80,
+            margin: EdgeInsets.only(
+                top: MediaQuery.of(context).size.height * 0.7,
+                left: MediaQuery.of(context).size.width * 0.1),
+            decoration: BoxDecoration(
+                color: Colors.white, borderRadius: BorderRadius.circular(30)),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                IconButton(
+                  onPressed: () {
+                    if (isPlaying) {
+                      _audioPlayer.pause();
+
+                      setState(() {
+                        isPlaying = false;
+                      });
+                    } else {
+                      _audioPlayer.resume();
+
+                      setState(() {
+                        isPlaying = true;
+                      });
+                    }
+                  },
+                  icon: Icon(isPlaying
+                      ? Icons.pause_rounded
+                      : Icons.play_arrow_rounded),
+                  iconSize: 32.0,
+                ),
+                SizedBox(width: 25),
+                IconButton(
+                  onPressed: () {
+                    _audioPlayer.stop();
+                    setState(() {
+                      isPlaying = false;
+                    });
+                  },
+                  icon: Icon(Icons.stop_rounded),
+                  iconSize: 32.0,
+                ),
+
+                SizedBox(width: 25),
+
+                Text(crtTime, style: TextStyle(fontWeight: FontWeight.w700),),
+
+                Text("  |  "),
+
+                Text(cptTime, style: TextStyle(fontWeight: FontWeight.w300),),
+              ],
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.audiotrack_rounded),
+        onPressed: () async {
+          FilePickerResult? result = await FilePicker.platform.pickFiles();
+          if (result != null) {
+            PlatformFile file = result.files.first;
+            print(file.path);
+            int status =
+                await _audioPlayer.play(file.path.toString(), isLocal: true);
+            if (status == 1) {
+              setState(() {
+                isPlaying = true;
+              });
+            }
+          }
+        },
+      ),
+    );
+  }
+}
